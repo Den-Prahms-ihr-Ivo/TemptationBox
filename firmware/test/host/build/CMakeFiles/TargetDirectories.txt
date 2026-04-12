@@ -1,4 +1,0 @@
-/Users/ivo/Documents/PROJECTS/TemptationBox/firmware/test/host/build/CMakeFiles/unity.dir
-/Users/ivo/Documents/PROJECTS/TemptationBox/firmware/test/host/build/CMakeFiles/test_runner.dir
-/Users/ivo/Documents/PROJECTS/TemptationBox/firmware/test/host/build/CMakeFiles/edit_cache.dir
-/Users/ivo/Documents/PROJECTS/TemptationBox/firmware/test/host/build/CMakeFiles/rebuild_cache.dir

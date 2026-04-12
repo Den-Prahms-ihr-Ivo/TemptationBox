@@ -1,1 +1,0 @@
-/usr/bin/cc  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/test_runner.dir/test_schedule.c.o CMakeFiles/test_runner.dir/Users/ivo/Documents/PROJECTS/TemptationBox/firmware/main/schedule/schedule.c.o CMakeFiles/test_runner.dir/Users/ivo/Documents/PROJECTS/TemptationBox/firmware/main/hal/hal_mock.c.o -o test_runner  libunity.a
