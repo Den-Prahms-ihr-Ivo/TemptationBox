@@ -1,7 +1,7 @@
 #include <stdint.h>
-#include <stdbool.h>   // for bool, if not already pulled in elsewhere
+#include <stdbool.h> 
 
-typedef uint8_t AudioClip;   // placeholder until audio module is defined
+typedef uint8_t AudioClip; // TODO: placeholder until audio module is defined
 
 typedef struct { 
   bool (*rfid_present)(void); 

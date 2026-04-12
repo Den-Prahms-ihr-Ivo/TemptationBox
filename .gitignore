@@ -1,0 +1,44 @@
+# ── Build output ──────────────────────────────────────────────────────────────
+firmware/test/host/build/
+firmware/build/
+build/
+
+# ── ESP-IDF / PlatformIO ──────────────────────────────────────────────────────
+.pio/
+.pioenvs/
+.piolibdeps/
+sdkconfig
+sdkconfig.old
+dependencies.lock
+
+# ── Python backend ────────────────────────────────────────────────────────────
+backend/__pycache__/
+backend/*.pyc
+backend/.venv/
+backend/venv/
+backend/.env
+*.egg-info/
+
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+
+# ── VS Code ───────────────────────────────────────────────────────────────────
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+# but keep c_cpp_properties.json — it defines include paths the whole team needs
+!.vscode/c_cpp_properties.json
+
+# ── KiCad ─────────────────────────────────────────────────────────────────────
+hardware/**/*-backups/
+hardware/**/*.000
+hardware/**/*.bak
+hardware/**/fp-info-cache
+
+# ── Credentials / secrets ─────────────────────────────────────────────────────
+*.env
+secrets.h
+credentials.h
+token.json
+google_credentials.json
