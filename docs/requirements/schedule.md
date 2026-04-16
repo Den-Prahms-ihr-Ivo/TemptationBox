@@ -35,4 +35,24 @@ schedule_resolve() returns the ScheduleWindow whose start/end bracket now. If no
 
 #### Tests:
 
-- [] test*schedule.c::test_resolve*\*()
+- test_schedule.c::test_resolve\*\*()
+
+## REQ-SCHED-003
+
+### Cache returns safe data under all conditions
+
+cache_get() always returns a usable ScheduleCache.
+If no data has been stored, it returns an empty cache with is_stale=true.
+If the stored data is older than 2 hours, is_stale is set to true.
+If a fresh fetch has been stored, is_stale is false.
+
+#### Acceptance criteria:
+
+- No data stored → empty cache, is_stale=true
+- Data stored, generated_at within 2h → is_stale=false
+- Data stored, generated_at older than 2h → is_stale=true
+- cache\*store() followed by cache_get() → returns same events
+
+#### Tests:
+
+- test_cache.c::test_cache\*\*()

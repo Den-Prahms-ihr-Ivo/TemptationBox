@@ -19,4 +19,6 @@ cmake --build "$BUILD_DIR" --parallel
 echo ""
 echo "▶ Running..."
 echo "──────────────────────────────────────"
-"$BUILD_DIR/test_runner"
+"$BUILD_DIR/test_schedule"
+echo "──────────────────────────────────────"
+"$BUILD_DIR/test_cache"

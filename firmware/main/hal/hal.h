@@ -1,5 +1,9 @@
+#ifndef HAL_H
+#define HAL_H
+
 #include <stdint.h>
 #include <stdbool.h> 
+#include <stddef.h>  
 
 typedef uint8_t AudioClip; // TODO: placeholder until audio module is defined
 
@@ -12,4 +16,8 @@ typedef struct {
   uint32_t (*time_now_unix)(void); 
   void (*play_audio)(AudioClip clip); 
   void (*ir_send_tv_off)(void); 
+  void (*nvs_write) (const uint8_t *data, size_t len);
+  bool (*nvs_read) (uint8_t *out, size_t len);
 } HAL;
+
+#endif // HAL_H

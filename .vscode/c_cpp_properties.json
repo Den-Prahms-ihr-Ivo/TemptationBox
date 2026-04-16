@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "name": "Host Tests",
+            "includePath": [
+                "${workspaceFolder}/firmware/main",
+                "${workspaceFolder}/firmware/main/hal",
+                "${workspaceFolder}/firmware/main/cache",
+                "${workspaceFolder}/firmware/main/schedule",
+                "${workspaceFolder}/firmware/test/host/Unity/src"
+            ],
+            "defines": [],
+            "cStandard": "c11",
+            "intelliSenseMode": "macos-clang-x64"
+        }
+    ],
+    "version": 4
+}

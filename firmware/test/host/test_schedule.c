@@ -94,6 +94,45 @@ void test_resolve_handles_multiple_overlapping_events_picks_correct_one(void) {
     TEST_ASSERT_EQUAL(NOW + 1800, w.until_unix);
 }
 
+void test_resolve_overlap_returns_highest_mode(void) {
+    ScheduleEvent events[] = {
+        make_event(NOW - 3600, NOW + 3600, MODE_RESTRICTED),
+        make_event(NOW - 1800, NOW + 1800, MODE_DEEP_FOCUS),
+    };
+    ScheduleWindow w = schedule_resolve(events, 2, NOW);
+    TEST_ASSERT_TRUE(w.valid);
+    TEST_ASSERT_EQUAL(MODE_DEEP_FOCUS, w.mode);
+}
+
+void test_resolve_overlap_highest_mode_wins_regardless_of_order(void) {
+    ScheduleEvent events[] = {
+        make_event(NOW - 1800, NOW + 1800, MODE_DEEP_FOCUS),
+        make_event(NOW - 3600, NOW + 3600, MODE_RESTRICTED),
+    };
+    ScheduleWindow w = schedule_resolve(events, 2, NOW);
+    TEST_ASSERT_TRUE(w.valid);
+    TEST_ASSERT_EQUAL(MODE_DEEP_FOCUS, w.mode);
+}
+
+void test_resolve_overlap_until_unix_belongs_to_winning_event(void) {
+    ScheduleEvent events[] = {
+        make_event(NOW - 3600, NOW + 7200, MODE_RESTRICTED),
+        make_event(NOW - 1800, NOW + 1800, MODE_DEEP_FOCUS),
+    };
+    ScheduleWindow w = schedule_resolve(events, 2, NOW);
+    TEST_ASSERT_EQUAL(NOW + 1800, w.until_unix);
+}
+
+void test_resolve_overlap_sleep_beats_everything(void) {
+    ScheduleEvent events[] = {
+        make_event(NOW - 3600, NOW + 3600, MODE_RESTRICTED),
+        make_event(NOW - 3600, NOW + 3600, MODE_DEEP_FOCUS),
+        make_event(NOW - 3600, NOW + 3600, MODE_SLEEP),
+    };
+    ScheduleWindow w = schedule_resolve(events, 3, NOW);
+    TEST_ASSERT_EQUAL(MODE_SLEEP, w.mode);
+}
+
 // ── Runner ────────────────────────────────────────────────────────────────────
 
 void setUp(void)    {}   // required by Unity, runs before each test
@@ -110,6 +149,10 @@ int main(void) {
     RUN_TEST(test_resolve_returns_free_for_empty_event_list);
     RUN_TEST(test_resolve_handles_multiple_events_picks_correct_one);
     RUN_TEST(test_resolve_handles_multiple_overlapping_events_picks_correct_one);
+    RUN_TEST(test_resolve_overlap_returns_highest_mode);
+    RUN_TEST(test_resolve_overlap_highest_mode_wins_regardless_of_order);
+    RUN_TEST(test_resolve_overlap_until_unix_belongs_to_winning_event);
+    RUN_TEST(test_resolve_overlap_sleep_beats_everything);
 
     return UNITY_END();
 }
