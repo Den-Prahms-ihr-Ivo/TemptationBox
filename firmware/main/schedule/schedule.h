@@ -54,4 +54,17 @@ ScheduleWindow schedule_resolve(const ScheduleEvent *events,
                                 uint8_t              count,
                                 uint32_t             now);
 
+/**
+ * REQ-SCHED-004
+ * Returns the required iPad slot hold duration in milliseconds
+ * for the given mode. Returns UINT32_MAX for MODE_SLEEP —
+ * callers must treat this as "no access permitted".
+ *
+ * @param mode  The current active ScheduleMode.
+ * @return      Hold duration in milliseconds.
+ *
+ * @note No side effects.
+ */
+uint32_t schedule_ipad_hold_ms(ScheduleMode mode);
+
 #endif // SCHEDULE_H

@@ -133,6 +133,25 @@ void test_resolve_overlap_sleep_beats_everything(void) {
     TEST_ASSERT_EQUAL(MODE_SLEEP, w.mode);
 }
 
+// ── REQ-SCHED-004 ─────────────────────────────────────────────────────────────
+
+void test_ipad_hold_free_requires_no_hold(void) {
+    TEST_ASSERT_EQUAL_UINT32(0, schedule_ipad_hold_ms(MODE_FREE));
+}
+
+void test_ipad_hold_restricted_requires_20s(void) {
+    TEST_ASSERT_EQUAL_UINT32(20000, schedule_ipad_hold_ms(MODE_RESTRICTED));
+}
+
+void test_ipad_hold_deep_focus_requires_60s(void) {
+    TEST_ASSERT_EQUAL_UINT32(60000, schedule_ipad_hold_ms(MODE_DEEP_FOCUS));
+}
+
+void test_ipad_hold_sleep_denies_access(void) {
+    TEST_ASSERT_EQUAL_UINT32(UINT32_MAX, schedule_ipad_hold_ms(MODE_SLEEP));
+}
+
+
 // ── Runner ────────────────────────────────────────────────────────────────────
 
 void setUp(void)    {}   // required by Unity, runs before each test
@@ -153,6 +172,11 @@ int main(void) {
     RUN_TEST(test_resolve_overlap_highest_mode_wins_regardless_of_order);
     RUN_TEST(test_resolve_overlap_until_unix_belongs_to_winning_event);
     RUN_TEST(test_resolve_overlap_sleep_beats_everything);
+    RUN_TEST(test_ipad_hold_free_requires_no_hold);
+    RUN_TEST(test_ipad_hold_restricted_requires_20s);
+    RUN_TEST(test_ipad_hold_deep_focus_requires_60s);
+    RUN_TEST(test_ipad_hold_sleep_denies_access);
+
 
     return UNITY_END();
 }

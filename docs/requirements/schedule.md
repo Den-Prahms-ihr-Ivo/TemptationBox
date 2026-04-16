@@ -56,3 +56,20 @@ If a fresh fetch has been stored, is_stale is false.
 #### Tests:
 
 - test_cache.c::test_cache\*\*()
+
+## REQ-SCHED-004
+
+### iPad hold duration scales with restriction mode
+
+A pure helper function returns the required button hold duration in milliseconds for a given ScheduleMode. Higher restriction modes require longer holds. MODE_SLEEP grants no access.
+
+### Acceptance criteria:
+
+- MODE_FREE → 0ms
+- MODE_RESTRICTED → 20000ms
+- MODE_DEEP_FOCUS → 60000ms
+- MODE_SLEEP → UINT32_MAX (no access sentinel)
+
+#### Tests:
+
+- test*schedule.c::test_ipad_hold_duration*\*()
