@@ -7,38 +7,78 @@
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-static ScheduleEvent make_event(uint32_t start_unix, uint32_t modified_unix) {
-    return (ScheduleEvent) {
-        .start_unix    = start_unix,
-        .modified_unix = modified_unix,
-        .mode          = MODE_RESTRICTED,
+static ScheduleEvent make_event(uint32_t start, uint32_t end, ScheduleMode mode) {
+    return (ScheduleEvent){
+        .start_unix = start,
+        .end_unix   = end,
+        .mode       = mode,
     };
 }
 
-// ── REQ-SCHED-001 ─────────────────────────────────────────────────────────────
+// ── REQ-SCHED-002 ─────────────────────────────────────────────────────────────
 
-void test_2day_rule_excludes_event_modified_47h_before_start(void) {
-    ScheduleEvent ev = make_event(
-        NOW + (48 * 3600),   // starts 48h from now
-        NOW + (1  * 3600)    // modified only 47h before start
-    );
-    TEST_ASSERT_FALSE(schedule_accept_event(&ev, NOW));
+void test_resolve_returns_correct_mode_when_now_inside_event(void) {
+    ScheduleEvent events[] = {
+        make_event(NOW - 3600, NOW + 3600, MODE_RESTRICTED),
+    };
+    ScheduleWindow w = schedule_resolve(events, 1, NOW);
+    TEST_ASSERT_TRUE(w.valid);
+    TEST_ASSERT_EQUAL(MODE_RESTRICTED, w.mode);
+    TEST_ASSERT_EQUAL(NOW + 3600, w.until_unix);
 }
 
-void test_2day_rule_accepts_event_modified_49h_before_start(void) {
-    ScheduleEvent ev = make_event(
-        NOW + (48 * 3600),   // starts 48h from now
-        NOW - (1  * 3600)    // modified 49h before start
-    );
-    TEST_ASSERT_TRUE(schedule_accept_event(&ev, NOW));
+void test_resolve_returns_free_when_now_before_all_events(void) {
+    ScheduleEvent events[] = {
+        make_event(NOW + 3600, NOW + 7200, MODE_RESTRICTED),
+    };
+    ScheduleWindow w = schedule_resolve(events, 1, NOW);
+    TEST_ASSERT_FALSE(w.valid);
+    TEST_ASSERT_EQUAL(MODE_FREE, w.mode);
 }
 
-void test_2day_rule_rejects_event_modified_exactly_48h_before_start(void) {
-    ScheduleEvent ev = make_event(
-        NOW + (48 * 3600),
-        NOW                  // modified exactly 48h before — boundary, should exclude
-    );
-    TEST_ASSERT_FALSE(schedule_accept_event(&ev, NOW));
+void test_resolve_returns_free_when_now_after_all_events(void) {
+    ScheduleEvent events[] = {
+        make_event(NOW - 7200, NOW - 3600, MODE_RESTRICTED),
+    };
+    ScheduleWindow w = schedule_resolve(events, 1, NOW);
+    TEST_ASSERT_FALSE(w.valid);
+    TEST_ASSERT_EQUAL(MODE_FREE, w.mode);
+}
+
+void test_resolve_includes_now_at_start_boundary(void) {
+    ScheduleEvent events[] = {
+        make_event(NOW, NOW + 3600, MODE_RESTRICTED),
+    };
+    ScheduleWindow w = schedule_resolve(events, 1, NOW);
+    TEST_ASSERT_TRUE(w.valid);
+    TEST_ASSERT_EQUAL(MODE_RESTRICTED, w.mode);
+}
+
+void test_resolve_excludes_now_at_end_boundary(void) {
+    ScheduleEvent events[] = {
+        make_event(NOW - 3600, NOW, MODE_RESTRICTED),
+    };
+    ScheduleWindow w = schedule_resolve(events, 1, NOW);
+    TEST_ASSERT_FALSE(w.valid);
+    TEST_ASSERT_EQUAL(MODE_FREE, w.mode);
+}
+
+void test_resolve_returns_free_for_empty_event_list(void) {
+    ScheduleWindow w = schedule_resolve(NULL, 0, NOW);
+    TEST_ASSERT_FALSE(w.valid);
+    TEST_ASSERT_EQUAL(MODE_FREE, w.mode);
+}
+
+void test_resolve_handles_multiple_events_picks_correct_one(void) {
+    ScheduleEvent events[] = {
+        make_event(NOW - 7200, NOW - 3600, MODE_RESTRICTED),  // past
+        make_event(NOW - 1800, NOW + 1800, MODE_DEEP_FOCUS),  // current
+        make_event(NOW + 3600, NOW + 7200, MODE_SLEEP),       // future
+    };
+    ScheduleWindow w = schedule_resolve(events, 3, NOW);
+    TEST_ASSERT_TRUE(w.valid);
+    TEST_ASSERT_EQUAL(MODE_DEEP_FOCUS, w.mode);
+    TEST_ASSERT_EQUAL(NOW + 1800, w.until_unix);
 }
 
 // ── Runner ────────────────────────────────────────────────────────────────────
@@ -49,9 +89,13 @@ void tearDown(void) {}   // required by Unity, runs after each test
 int main(void) {
     UNITY_BEGIN();
 
-    RUN_TEST(test_2day_rule_excludes_event_modified_47h_before_start);
-    RUN_TEST(test_2day_rule_accepts_event_modified_49h_before_start);
-    RUN_TEST(test_2day_rule_rejects_event_modified_exactly_48h_before_start);
+    RUN_TEST(test_resolve_returns_correct_mode_when_now_inside_event);
+    RUN_TEST(test_resolve_returns_free_when_now_before_all_events);
+    RUN_TEST(test_resolve_returns_free_when_now_after_all_events);
+    RUN_TEST(test_resolve_includes_now_at_start_boundary);
+    RUN_TEST(test_resolve_excludes_now_at_end_boundary);
+    RUN_TEST(test_resolve_returns_free_for_empty_event_list);
+    RUN_TEST(test_resolve_handles_multiple_events_picks_correct_one);
 
     return UNITY_END();
 }

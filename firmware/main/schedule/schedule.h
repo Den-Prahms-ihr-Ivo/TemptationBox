@@ -7,10 +7,10 @@
 // ── Schedule mode ─────────────────────────────────────────────────────────────
 
 typedef enum {
-    MODE_FREE,          // remote may be removed, no enforcement
-    MODE_RESTRICTED,    // remote must remain in box
-    MODE_DEEP_FOCUS,    // restricted + longer iPad hold duration
-    MODE_SLEEP,         // strict restriction, no overrides
+    MODE_FREE       = 0,  // remote may be removed, no enforcement
+    MODE_RESTRICTED = 1,  // remote must remain in box
+    MODE_DEEP_FOCUS = 2,  // restricted + longer iPad hold duration
+    MODE_SLEEP      = 3,  // strict restriction, no overrides
 } ScheduleMode;
 
 // ── Schedule event ────────────────────────────────────────────────────────────
@@ -18,7 +18,6 @@ typedef enum {
 typedef struct {
     uint32_t     start_unix;      // unix timestamp: when restriction begins
     uint32_t     end_unix;        // unix timestamp: when restriction ends
-    uint32_t     modified_unix;   // unix timestamp: when event was last modified
     ScheduleMode mode;
 } ScheduleEvent;
 
@@ -35,18 +34,21 @@ typedef struct {
 // ── API ───────────────────────────────────────────────────────────────────────
 
 /**
- * REQ-SCHED-001
- * Returns true if the event passes the 2-day rule and may be accepted
- * into the local schedule cache. Returns false if the event was created
- * or modified less than 48 hours before its start time.
- */
-bool schedule_accept_event(const ScheduleEvent *ev, uint32_t now);
-
-/**
  * REQ-SCHED-002
- * Given an array of accepted events and the current unix time, returns
- * the active ScheduleWindow. If no event covers now, returns a window
- * with mode MODE_FREE and valid = false.
+ * Resolves the active schedule window for the current moment.
+ *
+ * Iterates all events and finds those where now falls within
+ * [start_unix, end_unix). If multiple events overlap, the one
+ * with the highest ScheduleMode value wins. If no event covers
+ * now, returns a window with mode=MODE_FREE and valid=false.
+ *
+ * @param events  Pointer to array of ScheduleEvent. May be NULL.
+ * @param count   Number of events in the array.
+ * @param now     Current unix timestamp (from hal->time_now_unix()).
+ * @return        ScheduleWindow describing the active window.
+ *
+ * @note Pure function — no side effects, no hardware access.
+ *       Safe to call on every logic tick.
  */
 ScheduleWindow schedule_resolve(const ScheduleEvent *events,
                                 uint8_t              count,

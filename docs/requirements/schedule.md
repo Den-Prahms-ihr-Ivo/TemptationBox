@@ -2,7 +2,7 @@
 
 ---
 
-## REQ-SCHED-001
+## REQ-SCHED-001 (MOVED TO BACKEND)
 
 ### 2-day rule filters recent calendar changes
 
@@ -15,8 +15,24 @@ Events created or modified less than 48h before their start time shall be ignore
 
 #### Tests:
 
-> TODO: Implement is tnur ein Platzhalter!!
-
-- test_schedule.py::test_2day_rule_excludes_recent
-
 ---
+
+## REQ-SCHED-002
+
+### Resolve active window from event list
+
+Given an array of events and the current unix time,
+schedule_resolve() returns the ScheduleWindow whose start/end bracket now. If no event covers now, returns MODE_FREE with valid=false.
+
+#### Acceptance criteria:
+
+- now inside event → correct mode, correct until_unix, valid=true
+- now before all events → MODE_FREE, valid=false
+- now after all events → MODE_FREE, valid=false
+- now exactly at start → included (boundary)
+- now exactly at end → excluded (boundary)
+- empty event list → MODE_FREE, valid=false
+
+#### Tests:
+
+- [] test*schedule.c::test_resolve*\*()
