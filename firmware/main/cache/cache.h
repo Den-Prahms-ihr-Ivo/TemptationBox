@@ -8,7 +8,8 @@
 #include "../hal/hal.h"
 
 #define CACHE_MAX_EVENTS 32
-#define CACHE_STALE_THRESHOLD_S 200
+#define CACHE_STALE_THRESHOLD_S (2 * 60 * 60)   // 2 hours
+#define NET_SYNC_INTERVAL_MS  (15 * 60 * 1000)  // 15 minutes
 
 typedef struct {
     uint32_t      generated_at;              // backend timestamp

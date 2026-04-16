@@ -2,7 +2,7 @@
 #include "cache.h"  
 
 void cache_store(const HAL *hal, const ScheduleCache *cache) {
-    //hal->nvs_write((const uint8_t *)cache, sizeof(ScheduleCache));
+    hal->nvs_write((const uint8_t *)cache, sizeof(ScheduleCache));
 }
 
 ScheduleCache cache_get(const HAL *hal) {
