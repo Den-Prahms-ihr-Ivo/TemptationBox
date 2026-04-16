@@ -81,6 +81,19 @@ void test_resolve_handles_multiple_events_picks_correct_one(void) {
     TEST_ASSERT_EQUAL(NOW + 1800, w.until_unix);
 }
 
+void test_resolve_handles_multiple_overlapping_events_picks_correct_one(void) {
+    ScheduleEvent events[] = {
+        make_event(NOW - 7200, NOW + 3600, MODE_FREE), // Ranking = 0 
+        make_event(NOW - 1800, NOW + 1800, MODE_DEEP_FOCUS), // Ranking = 2 
+        make_event(NOW - 3600, NOW + 7200, MODE_RESTRICTED), // Ranking = 1
+        make_event(NOW + 3600, NOW + 7200, MODE_SLEEP), // highest ranking but in the future
+    };
+    ScheduleWindow w = schedule_resolve(events, 4, NOW);
+    TEST_ASSERT_TRUE(w.valid);
+    TEST_ASSERT_EQUAL(MODE_DEEP_FOCUS, w.mode);
+    TEST_ASSERT_EQUAL(NOW + 1800, w.until_unix);
+}
+
 // ── Runner ────────────────────────────────────────────────────────────────────
 
 void setUp(void)    {}   // required by Unity, runs before each test
@@ -96,6 +109,7 @@ int main(void) {
     RUN_TEST(test_resolve_excludes_now_at_end_boundary);
     RUN_TEST(test_resolve_returns_free_for_empty_event_list);
     RUN_TEST(test_resolve_handles_multiple_events_picks_correct_one);
+    RUN_TEST(test_resolve_handles_multiple_overlapping_events_picks_correct_one);
 
     return UNITY_END();
 }

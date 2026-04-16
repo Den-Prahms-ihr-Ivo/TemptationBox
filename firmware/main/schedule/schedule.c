@@ -16,8 +16,8 @@ ScheduleWindow schedule_resolve(const ScheduleEvent *events,
     }
 
     for (int i = 0; i < count; i++, ev++) {
-        if (now >= ev->start_unix && now < ev->end_unix) {
-            current_best = ev->mode > current_best ? ev->mode : current_best; 
+        if (now >= ev->start_unix && now < ev->end_unix && ev->mode > current_best) {
+            current_best = ev->mode; 
             validity = true;
             current_until = ev->end_unix;
         }
