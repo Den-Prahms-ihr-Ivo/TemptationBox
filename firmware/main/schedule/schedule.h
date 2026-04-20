@@ -8,10 +8,12 @@
 
 typedef enum {
     MODE_FREE       = 0,  // remote may be removed, no enforcement
-    MODE_RESTRICTED = 1,  // remote must remain in box
-    MODE_DEEP_FOCUS = 2,  // restricted + longer iPad hold duration
-    MODE_SLEEP      = 3,  // strict restriction, no overrides
+    MODE_PERMITTED  = 1,   // scheduled TV window — active but signalled differently
+    MODE_RESTRICTED = 2,  // remote must remain in box
+    MODE_DEEP_FOCUS = 3,  // restricted + longer iPad hold duration
+    MODE_SLEEP      = 4,  // strict restriction, no overrides
 } ScheduleMode;
+
 
 // ── Schedule event ────────────────────────────────────────────────────────────
 

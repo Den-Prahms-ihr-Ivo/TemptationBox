@@ -139,6 +139,10 @@ void test_ipad_hold_free_requires_no_hold(void) {
     TEST_ASSERT_EQUAL_UINT32(0, schedule_ipad_hold_ms(MODE_FREE));
 }
 
+void test_ipad_hold_permitted_requires_no_hold(void) {
+    TEST_ASSERT_EQUAL_UINT32(0, schedule_ipad_hold_ms(MODE_PERMITTED));
+}
+
 void test_ipad_hold_restricted_requires_20s(void) {
     TEST_ASSERT_EQUAL_UINT32(20000, schedule_ipad_hold_ms(MODE_RESTRICTED));
 }
@@ -173,6 +177,7 @@ int main(void) {
     RUN_TEST(test_resolve_overlap_until_unix_belongs_to_winning_event);
     RUN_TEST(test_resolve_overlap_sleep_beats_everything);
     RUN_TEST(test_ipad_hold_free_requires_no_hold);
+    RUN_TEST(test_ipad_hold_permitted_requires_no_hold);
     RUN_TEST(test_ipad_hold_restricted_requires_20s);
     RUN_TEST(test_ipad_hold_deep_focus_requires_60s);
     RUN_TEST(test_ipad_hold_sleep_denies_access);

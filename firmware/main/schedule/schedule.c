@@ -33,6 +33,7 @@ ScheduleWindow schedule_resolve(const ScheduleEvent *events,
 uint32_t schedule_ipad_hold_ms(ScheduleMode mode) {
     switch (mode) {
         case MODE_FREE:        return 0;
+        case MODE_PERMITTED:   return 0;
         case MODE_RESTRICTED:  return 20000;
         case MODE_DEEP_FOCUS:  return 60000;
         case MODE_SLEEP:       return UINT32_MAX;

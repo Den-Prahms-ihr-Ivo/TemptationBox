@@ -66,6 +66,7 @@ A pure helper function returns the required button hold duration in milliseconds
 ### Acceptance criteria:
 
 - MODE_FREE → 0ms
+- MODE_PERMITTED → 0ms
 - MODE_RESTRICTED → 20000ms
 - MODE_DEEP_FOCUS → 60000ms
 - MODE_SLEEP → UINT32_MAX (no access sentinel)
