@@ -4,22 +4,25 @@
  */
 
 #include <stdint.h>
+#include <stdbool.h>
 
-#define PRESENCE_DEBOUNCE_SAMPLES 3
+#include "../hal/hal.h"
 
-typedef enum {
-    PRESENCE_ABSENT,
-    PRESENCE_PRESENT,
-} PresenceState;
+#define PRESENCE_DEBOUNCE_ABSENT_SAMPLES  3   // ticks to confirm removal
+#define PRESENCE_DEBOUNCE_PRESENT_SAMPLES 2   // ticks to confirm insertion
 
-typedef enum {
-    IPAD_ABSENT,
-    IPAD_DOCKED,
-} IpadState;
 
-typedef struct {
-    uint8_t      absent_count;
-    PresenceState state;
-    uint8_t      ipad_absent_count;
-    IpadState    ipad_state;
-} PresenceContext;
+/** Resets all internal state. Call once on boot and in setUp(). */
+void presence_init(void);
+
+/** Call once per logic tick. Reads HAL, updates internal state. */
+void presence_tick(const HAL *hal);
+
+/** Returns current debounced remote presence state. 
+ * It merges the RFID and weight sensor into a single 
+ * presence state of the remote.
+ */
+bool presence_is_remote_present(void);
+
+/** Returns current debounced iPad slot state. */
+bool presence_is_ipad_present(void);

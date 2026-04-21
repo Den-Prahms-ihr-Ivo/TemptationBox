@@ -37,6 +37,13 @@ static bool mock_weight_present(void) {
     return mock_weight_state;
 }
 
+// ── iPad ────────────────────────────────────────────────────────────────────
+static bool mock_ipad_sensor_state = false;
+
+static bool mock_ipad_slot_present(void) {
+    return mock_ipad_sensor_state;
+}
+
 // ── Lock ──────────────────────────────────────────────────────────────────────
 static bool mock_lock_armed = false;
 
@@ -72,27 +79,55 @@ static void mock_led_set(uint8_t idx, uint8_t r, uint8_t g, uint8_t b) {
 // ── Public: HAL factory ───────────────────────────────────────────────────────
 HAL hal_mock_create(void) {
     return (HAL){
-        .rfid_present    = mock_rfid_present,
-        .weight_present  = mock_weight_present,
-        .lock_arm        = mock_lock_arm,
-        .lock_release    = mock_lock_release,
-        .led_set         = mock_led_set,
-        .time_now_unix   = mock_time_now_unix,
-        .play_audio      = mock_play_audio,
-        .ir_send_tv_off  = mock_ir_send_tv_off,
-        .nvs_write       = mock_nvs_write,
-        .nvs_read        = mock_nvs_read,
+        .rfid_present      = mock_rfid_present,
+        .weight_present    = mock_weight_present,
+        .ipad_slot_present = mock_ipad_slot_present,
+        .lock_arm          = mock_lock_arm,
+        .lock_release      = mock_lock_release,
+        .led_set           = mock_led_set,
+        .time_now_unix     = mock_time_now_unix,
+        .play_audio        = mock_play_audio,
+        .ir_send_tv_off    = mock_ir_send_tv_off,
+        .nvs_write         = mock_nvs_write,
+        .nvs_read          = mock_nvs_read,
     };
 }
 
 // ── Public: setters for test control ─────────────────────────────────────────
-void hal_mock_set_time(uint32_t t)        { mock_time         = t; }
-void hal_mock_set_rfid(bool present)      { mock_rfid_state   = present; }
-void hal_mock_set_weight(bool present)    { mock_weight_state = present; }
-void hal_mock_nvs_clear(void)             { mock_nvs_has_data = false; }
+void hal_mock_set_time(uint32_t t)          { mock_time         = t; }
+void hal_mock_set_rfid(bool present)        { mock_rfid_state   = present; }
+void hal_mock_set_weight(bool present)      { mock_weight_state = present; }
+void hal_mock_set_ipad_sensor(bool present) { mock_ipad_sensor_state = present; };
+void hal_mock_nvs_clear(void)               { mock_nvs_has_data = false; }
 
 // ── Public: getters for test assertions ───────────────────────────────────────
 bool         hal_mock_lock_is_armed(void)      { return mock_lock_armed; }
 AudioClip    hal_mock_last_audio_clip(void)    { return mock_last_clip; }
 int          hal_mock_audio_call_count(void)   { return mock_audio_call_count; }
 int          hal_mock_ir_call_count(void)      { return mock_ir_call_count; }
+
+// ── Public: Reset ───────────────────────────────────────────────────────
+void hal_mock_reset(void) {
+    // sensors
+    mock_rfid_state        = false;
+    mock_weight_state      = false;
+    mock_ipad_sensor_state = false;
+
+    // lock
+    mock_lock_armed        = false;
+
+    // audio
+    mock_last_clip         = 0;
+    mock_audio_call_count  = 0;
+
+    // IR
+    mock_ir_call_count     = 0;
+
+    // NVS
+    memset(mock_nvs_buf, 0, sizeof(mock_nvs_buf));
+    mock_nvs_has_data      = false;
+
+    // time
+    mock_time              = 0;
+}
+

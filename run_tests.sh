@@ -22,3 +22,5 @@ echo "────────────────────────�
 "$BUILD_DIR/test_schedule"
 echo "──────────────────────────────────────"
 "$BUILD_DIR/test_cache"
+echo "──────────────────────────────────────"
+"$BUILD_DIR/test_presence"

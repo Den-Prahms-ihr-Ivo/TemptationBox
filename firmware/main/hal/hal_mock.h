@@ -7,11 +7,15 @@
 // factory
 HAL  hal_mock_create(void);
 
+// reset
+void hal_mock_reset(void);
+
 // setters — control mock state from tests
 void hal_mock_set_time(uint32_t t);
 void hal_mock_set_rfid(bool present);
 void hal_mock_set_weight(bool present);
 void hal_mock_nvs_clear(void);
+void hal_mock_set_ipad_sensor(bool present);
 
 // getters — assert on what the mock observed
 bool      hal_mock_lock_is_armed(void);

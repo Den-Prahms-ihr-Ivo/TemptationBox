@@ -10,6 +10,7 @@ typedef uint8_t AudioClip; // TODO: placeholder until audio module is defined
 typedef struct { 
   bool (*rfid_present)(void); 
   bool (*weight_present)(void); 
+  bool (*ipad_slot_present)(void);
   void (*lock_release)(void); 
   void (*lock_arm)(void); 
   void (*led_set)(uint8_t idx, uint8_t r, uint8_t g, uint8_t b); 

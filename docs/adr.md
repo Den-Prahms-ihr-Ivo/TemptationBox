@@ -263,3 +263,47 @@ mode, including FREE and PERMITTED.
 **Rejected alternative:** Firing IR off only during restricted
 windows. Rejected because it leaves the loophole open and
 requires mode-aware logic in the return handler.
+
+---
+
+## ADR-014: Presence debounce applied in both directions with separate thresholds
+
+**Decision:** Debounce is applied to both ABSENT→PRESENT and
+PRESENT→ABSENT transitions. Each direction has its own named
+threshold constant:
+
+    PRESENCE_DEBOUNCE_PRESENT_SAMPLES  2   // ticks to confirm insertion
+    PRESENCE_DEBOUNCE_ABSENT_SAMPLES   3   // ticks to confirm removal
+
+**Reason:**
+Sensors can produce noisy readings in both directions:
+
+- On removal: vibration or brief contact can cause spurious
+  dropouts during normal use — debouncing prevents false violations
+- On insertion: a noisy RFID read during remote placement could
+  prematurely report PRESENT and arm the lock before the remote
+  is settled — debouncing prevents premature state changes
+
+The thresholds differ deliberately. Removal requires more
+confirmation samples because a false ABSENT during a restricted
+window triggers a violation — the higher cost justifies the
+higher threshold. Insertion requires fewer samples because the
+remote settling into the box is a less ambiguous physical event
+than a vibration dropout.
+
+At a 500ms tick rate:
+
+- PRESENT confirmed after 1 second (2 samples)
+- ABSENT confirmed after 1.5 seconds (3 samples)
+
+Both thresholds apply equally to the remote presence channel
+and the iPad slot channel.
+
+Debounce logic lives entirely in presence.c, not in the HAL.
+The HAL reports raw sensor state per tick and has no memory.
+This keeps the HAL dumb and the debounce logic host-testable.
+
+**Rejected alternative:** Debouncing only the PRESENT→ABSENT
+direction. Rejected because it left the insertion path vulnerable
+to noisy reads that could prematurely arm the lock or trigger
+the IR off signal on a spurious PRESENT transition.
