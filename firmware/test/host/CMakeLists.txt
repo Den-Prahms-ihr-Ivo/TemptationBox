@@ -58,3 +58,21 @@ target_include_directories(test_presence PRIVATE
     ../../main
 )
 target_link_libraries(test_presence PRIVATE unity)
+
+# ── TEST LOCK ───────────────────────────────────────────────────────────────
+
+add_executable(test_lock
+    test_lock.c
+    ../../main/lock/lock.c
+    ../../main/hal/hal_mock.c
+)
+target_include_directories(test_lock PRIVATE
+    Unity/src
+    ../../main/lock
+    ../../main/presence
+    ../../main/cache
+    ../../main/schedule
+    ../../main/hal
+    ../../main
+)
+target_link_libraries(test_lock PRIVATE unity)

@@ -24,3 +24,5 @@ echo "────────────────────────�
 "$BUILD_DIR/test_cache"
 echo "──────────────────────────────────────"
 "$BUILD_DIR/test_presence"
+echo "──────────────────────────────────────"
+"$BUILD_DIR/test_lock"
