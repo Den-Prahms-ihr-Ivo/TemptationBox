@@ -156,6 +156,39 @@ void test_ipad_hold_sleep_denies_access(void) {
 }
 
 
+// ── REQ-SCHED-005 ─────────────────────────────────────────────────────────────
+
+void test_release_behaviour_free_is_instant(void) {
+    ReleaseBehaviour w = schedule_release_behaviour(MODE_FREE);
+    TEST_ASSERT_EQUAL(RELEASE_INSTANT, w);
+}
+
+void test_release_behaviour_permitted_is_instant(void) {
+    ReleaseBehaviour w = schedule_release_behaviour(MODE_PERMITTED);
+    TEST_ASSERT_EQUAL(RELEASE_INSTANT, w);
+}
+
+void test_release_behaviour_restricted_is_hold(void) {
+    ReleaseBehaviour w = schedule_release_behaviour(MODE_RESTRICTED);
+    TEST_ASSERT_EQUAL(RELEASE_HOLD, w);
+}
+
+void test_release_behaviour_deep_focus_is_hold(void) {
+    ReleaseBehaviour w = schedule_release_behaviour(MODE_DEEP_FOCUS);
+    TEST_ASSERT_EQUAL(RELEASE_HOLD, w);
+}
+
+void test_release_behaviour_sleep_is_denied(void) {
+    ReleaseBehaviour w = schedule_release_behaviour(MODE_SLEEP);
+    TEST_ASSERT_EQUAL(RELEASE_DENIED, w);
+}
+
+void test_release_behaviour_unknown_defaults_to_denied(void) {
+    ReleaseBehaviour w = schedule_release_behaviour(-1);
+    TEST_ASSERT_EQUAL(RELEASE_DENIED, w);
+}
+
+
 // ── Runner ────────────────────────────────────────────────────────────────────
 
 void setUp(void)    {}   // required by Unity, runs before each test
@@ -181,7 +214,12 @@ int main(void) {
     RUN_TEST(test_ipad_hold_restricted_requires_20s);
     RUN_TEST(test_ipad_hold_deep_focus_requires_60s);
     RUN_TEST(test_ipad_hold_sleep_denies_access);
-
+    RUN_TEST(test_release_behaviour_free_is_instant);
+    RUN_TEST(test_release_behaviour_permitted_is_instant);
+    RUN_TEST(test_release_behaviour_restricted_is_hold);
+    RUN_TEST(test_release_behaviour_deep_focus_is_hold);
+    RUN_TEST(test_release_behaviour_sleep_is_denied);
+    RUN_TEST(test_release_behaviour_unknown_defaults_to_denied);
 
     return UNITY_END();
 }

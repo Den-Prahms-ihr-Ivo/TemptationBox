@@ -6,7 +6,7 @@
 
 **Title:** 2-day rule filters recent calendar changes
 
-*See ADR-006 for further details*
+_See ADR-006 for further details_
 
 Events created or modified less than 48h before their start time shall be ignored by the schedule engine.
 
@@ -95,7 +95,7 @@ A pure helper function returns the required button hold duration in milliseconds
 
 ## REQ-SCHED-005
 
-**Status:** TODO
+**Status:** RED
 
 **Title:** Release button behaviour scales with restriction mode
 

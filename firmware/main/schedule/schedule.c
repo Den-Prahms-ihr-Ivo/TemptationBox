@@ -40,3 +40,8 @@ uint32_t schedule_ipad_hold_ms(ScheduleMode mode) {
         default:               return UINT32_MAX;  // fail safe — unknown mode = no access
     }
 }
+
+ReleaseBehaviour schedule_release_behaviour(ScheduleMode mode) {
+    return RELEASE_DENIED;
+}
+
