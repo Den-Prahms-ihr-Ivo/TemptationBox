@@ -1,102 +1,161 @@
 # Latch State Machine, REQ-LOCK-XXX
 
-## REQ-LOCK-001 : IDLE transitions to ARMED when restriction starts and remote is present
+## REQ-LOCK-001
 
-When schedule_resolve returns a restricted mode
-and the remote is present, the lock transitions from IDLE to ARMED.
-lock_arm() is called exactly once on the transition tick.
-If the remote is absent when restriction starts, the system
-transitions directly to VIOLATION instead.
+**Status:** TODO
 
-### Acceptance criteria:
+**Title:** Boot grace period defers all enforcement
 
-- IDLE + restriction starts + remote present → ARMED, lock_arm() called once
-- IDLE + restriction starts + remote absent → VIOLATION, lock_arm() not called
-- IDLE + MODE_FREE → stays IDLE, lock_arm() not called
-- ARMED + same restriction continues → stays ARMED, lock_arm() not called again
+**Description:**
 
-### Tests:
+After power-on the system spends
+LOCK_BOOT_GRACE_S in LOCK_STATE_BOOT during which the motor
+holds the lock open and no restrictions are enforced. After
+the grace period expires the state machine transitions to
+IDLE and normal logic begins.
 
-- test_lock.c::test_lock_idle_to_armed_remote_present()
-- test_lock.c::test_lock_idle_to_violation_when_remote_absent()
-- test_lock.c::test_lock_stays_idle_during_free_window()
-- test_lock.c::test_lock_stays_armed_on_continued_restriction()
+**Acceptance criteria:**
 
----
-
-## REQ-LOCK-002 : ARMED transitions to VIOLATION when remote is removed
-
-When the remote is removed during ARMED state,
-the system transitions to VIOLATION. ir_send_tv_off() is called
-exactly once on the transition tick. Subsequent ticks in VIOLATION
-with remote still absent do not repeat the IR signal.
-
-### Acceptance criteria:
-
-- ARMED + remote removed → VIOLATION, ir_send_tv_off() called once
-- VIOLATION + remote still absent → stays VIOLATION, no repeated IR call
-- ARMED + remote still present → stays ARMED
-- ARMED + restriction ends → transitions to IDLE, lock_release() called
-
-### Tests:
-
-- test_lock.c::test_lock_armed_to_violation_on_remote_removal()
-- test_lock.c::test_lock_violation_no_repeated_ir_signal()
-- test_lock.c::test_lock_stays_armed_while_remote_present()
-- test_lock.c::test_lock_armed_to_idle_when_restriction_ends()
+- t=0 → BOOT, lock_hold_open(true) called
+- t < LOCK_BOOT_GRACE_S → stays BOOT regardless of inputs
+- t >= LOCK_BOOT_GRACE_S → transitions to IDLE, lock_hold_open(false)
+- Schedule and presence inputs are ignored during BOOT
 
 ---
 
-## REQ-LOCK-003 : VIOLATION transitions to COOLDOWN when remote is returned
+## REQ-LOCK-002
 
-When the remote is returned during VIOLATION,
-the system transitions to COOLDOWN. play_audio(CLIP_RETURN) and
-led green flash are triggered exactly once on the transition tick.
-From COOLDOWN the system transitions to ARMED if still in a
-restricted window, or IDLE if the window has ended.
-ir_send_tv_off() is called on every remote return regardless of mode.
+**Status:** TODO
 
-### Acceptance criteria:
+**Title:** ARMED is a consent-based state, not a physical lock
 
-- VIOLATION + remote returned → COOLDOWN, play_audio(CLIP_RETURN) called once
-- COOLDOWN + restriction active → ARMED, lock_arm() called
-- COOLDOWN + no restriction → IDLE, lock_release() called
-- ir_send_tv_off() called on remote return in any mode
+**Description:**
 
-### Tests:
+In ARMED state the motor releases only when
+both the lid is closed AND the remote is present. If either is
+false, the motor holds the lock open to prevent deadlock. The
+lock mechanically engages when the user physically closes the lid.
 
-- test_lock.c::test_lock_violation_to_cooldown_on_remote_return()
-- test_lock.c::test_lock_cooldown_to_armed_if_restricted()
-- test_lock.c::test_lock_cooldown_to_idle_if_free()
-- test_lock.c::test_lock_ir_fires_on_every_remote_return()
+**Acceptance criteria:**
+
+- ARMED + lid closed + remote present → lock_hold_open(false)
+- ARMED + lid open → lock_hold_open(true)
+- ARMED + remote absent → lock_hold_open(true)
+- Box opening is never automatic — the click incentive is
+  eliminated by design
 
 ---
 
-## REQ-LOCK-004 : Violation audio escalates based on elapsed time
+## REQ-LOCK-003
 
-During VIOLATION, audio feedback escalates in
-stages based on time elapsed since violation started. Stage
-timings are named constants, not magic numbers. Each stage
-triggers exactly once — audio does not repeat on every tick.
+**Status:** TODO
 
-### Constants:
+**Title:** Transition to ARMED happens on restriction start
 
-- LOCK_VIOLATION_SOFT_AUDIO_S (30 \* 60) 30 minutes
-- LOCK_VIOLATION_WARN_AUDIO_S (restriction end - 5 \* 60) 5 min before end
-- LOCK_VIOLATION_LOUD_AUDIO_S (restriction end) at restriction end
+**Description:**
 
-### Acceptance criteria:
+When schedule transitions from MODE_FREE to
+a restricted mode, state moves from IDLE to ARMED. Audio and
+LED hand-offs happen via display module (outside this scope).
+No immediate enforcement — the user must physically close the
+lid with the remote inside for the lock to engage.
 
-- violation elapsed < 30 min → no audio
-- violation elapsed >= 30 min → play_audio(CLIP_VIOLATION_SOFT) once
-- 5 min before restriction end → play_audio(CLIP_VIOLATION_WARN) once
-- restriction end reached → play_audio(CLIP_VIOLATION_LOUD) repeats each tick
-- each stage triggers exactly once except LOUD which repeats
+**Acceptance criteria:**
 
-### Tests:
+- IDLE + restricted mode starts → ARMED
+- ARMED + restriction ends → IDLE, lock_hold_open(true)
+- ARMED + same restriction continues → stays ARMED
 
-- test_lock.c::test_lock_violation_no_audio_before_threshold()
-- test_lock.c::test_lock_violation_soft_audio_at_30min()
-- test_lock.c::test_lock_violation_warn_audio_at_5min_before_end()
-- test_lock.c::test_lock_violation_loud_audio_at_restriction_end()
-- test_lock.c::test_lock_violation_soft_audio_triggers_only_once()
+---
+
+## REQ-LOCK-004
+
+**Status:** TODO
+
+**Title:** Closed lid without remote triggers escalating audio
+
+**Description:**
+
+If the user closes the lid while the remote
+is not inside during a restricted mode, the system plays
+escalating audio warnings until they reopen the box. Audio
+does not play in MODE_FREE even with this condition.
+
+**Acceptance criteria:**
+
+- ARMED + lid closed + remote absent → play_audio(CLIP_NAG_SOFT)
+- Condition persists >30s → play_audio(CLIP_NAG_LOUD)
+- Lid reopens → nag audio stops
+- MODE_FREE + lid closed + remote absent → no audio
+
+---
+
+## REQ-LOCK-005
+
+**Status:** TODO
+
+**Title:** Release button behaviour scales with mode
+
+**Description:**
+
+The release button triggers lock_hold_open
+based on the current mode's ReleaseBehaviour. The hold duration
+matches schedule_ipad_hold_ms() to keep the friction model
+consistent between the remote and iPad decisions.
+
+**Acceptance criteria:**
+
+- MODE_FREE → instant press releases
+- MODE_PERMITTED → instant press releases
+- MODE_RESTRICTED → hold 20s releases
+- MODE_DEEP_FOCUS → hold 60s releases
+- MODE_SLEEP → button has no effect
+- BOOT state → instant press releases
+
+---
+
+# REQ-LOCK-006
+
+**Status:** TODO
+
+**Title:** ARMED to VIOLATION when remote is removed
+
+**Description:**
+
+When the remote is removed during ARMED
+while the lid is closed, the system transitions to VIOLATION.
+ir_send_tv_off() fires once on the transition tick.
+
+**Acceptance criteria:**
+
+- ARMED + lid closed + remote removed → VIOLATION, IR fires once
+- VIOLATION + remote still absent → stays VIOLATION, no repeat IR
+- Lid open during ARMED is not a violation — it is a neutral state
+
+---
+
+# REQ-LOCK-007
+
+**Status:** TODO
+
+**Title:** VIOLATION to COOLDOWN on remote return
+
+**Description:**
+
+When the remote returns during VIOLATION,
+the system transitions to COOLDOWN and plays the return
+ceremony. IR off signal fires on every remote return in any mode.
+
+---
+
+# REQ-LOCK-008
+
+**Status:** TODO
+
+**Title:** Violation audio escalates by elapsed time
+
+**Description:**
+
+Previously REQ-LOCK-004, now with BOOT and
+consent logic clarified. Escalation starts only after the user
+has had reasonable time to comply.

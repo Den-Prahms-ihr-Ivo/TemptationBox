@@ -19,6 +19,10 @@ typedef struct {
   void (*ir_send_tv_off)(void); 
   void (*nvs_write) (const uint8_t *data, size_t len);
   bool (*nvs_read) (uint8_t *out, size_t len);
+  bool (*release_button_pressed)(void);
+  bool (*lid_is_closed)(void);         // is the lid physically shut?
+  bool (*lock_is_engaged)(void);       // is the latch mechanically caught?
+  void (*lock_hold_open)(bool hold);   // motor holds lock open when true
 } HAL;
 
 #endif // HAL_H

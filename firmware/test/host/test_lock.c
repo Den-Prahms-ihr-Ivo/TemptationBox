@@ -1,6 +1,7 @@
 #include "unity.h"
 #include "hal_mock.h"
 #include "../lock/lock.h"
+#include "../schedule/schedule.h"
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -14,6 +15,10 @@ void test_presence_initial_state_after_init(void) {
 
 // ── REQ-LOCK-001 ─────────────────────────────────────────────────────────────
 
+void test_lock_idle_to_armed_remote_present(void) {
+
+    TEST_ASSERT_TRUE(false);
+}
 
 // ── Runner ────────────────────────────────────────────────────────────────────
 

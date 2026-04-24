@@ -307,3 +307,238 @@ This keeps the HAL dumb and the debounce logic host-testable.
 direction. Rejected because it left the insertion path vulnerable
 to noisy reads that could prematurely arm the lock or trigger
 the IR off signal on a spurious PRESENT transition.
+
+## ADR-015: Five-minute boot grace period before enforcement begins
+
+**Decision:** On power-on the system enters LOCK_STATE_BOOT for
+LOCK_BOOT_GRACE_S (300 seconds). During this window the motor holds
+the lock open, no restrictions are enforced, and the release button
+behaves as unrestricted regardless of the active mode. After the
+grace period expires the state machine transitions to IDLE and
+normal schedule-driven logic resumes.
+
+**Reason:**
+
+- On boot the device has no guarantee that WiFi has connected,
+  SNTP has synced, or the calendar cache is fresh
+- Enforcing restrictions with stale or missing schedule data would
+  either trap the user unnecessarily or deny access based on wrong
+  state
+- The grace period gives task_net_sync time to fetch the current
+  schedule and task_logic time to resolve the real active window
+  before committing to any enforcement action
+- Five minutes is generous but the device boots rarely enough that
+  the cost is negligible
+
+**Rejected alternative:** Immediate enforcement on boot using
+cached data. Rejected because the cache may be hours old and the
+first tick after boot could produce a false violation or a
+false-secure state.
+
+**User visibility:** The LED ring should show a distinct colour
+during BOOT (suggest cyan or white pulsing) so the user understands
+the device is initialising rather than malfunctioning.
+
+---
+
+## ADR-016: Consent-based lock — no automatic closure
+
+**Decision:** The lock never engages automatically on a state
+transition. Transition to ARMED only signals that the system wants
+to be closed — the actual engagement requires the user to
+physically close the lid with the remote inside. The motor holds
+the lock open whenever either the lid is open or the remote is
+absent. The user physically commits to the restriction by closing
+the box.
+
+**Reason:**
+
+- An automatic closing click during deep work creates a Pavlovian
+  cue that interrupts the exact mental state the device is meant
+  to protect
+- Self-imposed restriction only works when the user consents to it
+  at the moment of closure — forcing it removes that consent
+- The physical act of closing the lid becomes a micro-ritual
+  that reinforces intention rather than undermining it
+- Eliminates the edge case of the box slamming shut with the
+  remote on the couch, creating deadlock
+
+**Consequence:** The user can technically avoid enforcement by
+never closing the lid. This is acceptable because:
+
+- Leaving the box open during restricted windows is itself a
+  visible failure the user cannot ignore
+- Nag audio (REQ-LOCK-004) triggers if the lid is closed without
+  the remote, closing the "close an empty box" loophole
+- The whole system relies on consent — removing consent entirely
+  means the device is not being used, which is a different problem
+
+**Rejected alternative:** Solenoid-driven automatic closure on
+restriction start. Rejected because the click cue is a concrete
+behavioural harm that undermines the device's core purpose.
+
+---
+
+## ADR-017: Release button with mode-dependent hold duration
+
+**Decision:** A physical release button on the box triggers
+lock_hold_open(true). The required press behaviour depends on
+the active mode via schedule_release_behaviour():
+
+    MODE_FREE       → RELEASE_INSTANT   (single press)
+    MODE_PERMITTED  → RELEASE_INSTANT   (single press)
+    MODE_RESTRICTED → RELEASE_HOLD_20S
+    MODE_DEEP_FOCUS → RELEASE_HOLD_60S
+    MODE_SLEEP      → RELEASE_DENIED    (button has no effect)
+    LOCK_STATE_BOOT → RELEASE_INSTANT   (always works during grace)
+
+**Reason:**
+
+- Extends the same friction model used for iPad access to remote
+  retrieval — deliberate effort, not willpower, filters impulse
+- Keeps the consent-based design consistent: the user physically
+  commits to accessing the remote through a visible action
+- The LED ring indicates which behaviour is active so the user
+  knows what to expect before pressing
+
+**Why not reuse the existing hold button for iPad mode?**
+
+- Separate physical buttons for separate actions prevent
+  accidental triggering
+- The iPad button is inside near the slot, the release button
+  is on the exterior — they belong to different use contexts
+
+**Failure mode:** If the release button itself fails, the user
+is locked out with no path to the remote. Mitigation: the boot
+grace period on power cycle always grants instant access, so
+pulling the plug is always a safe recovery path.
+
+---
+
+## ADR-018: Lid state and lock engagement are separate HAL signals
+
+**Decision:** The HAL exposes three distinct lock-related inputs
+and one output:
+
+    bool lid_is_closed(void);          // is the lid physically shut?
+    bool lock_is_engaged(void);        // is the latch mechanically caught?
+    bool release_button_pressed(void); // is the release button held?
+    void lock_hold_open(bool hold);    // motor holds lock open when true
+
+The lid sensor and the lock engagement sensor are separate
+physical signals.
+
+**Reason:**
+
+- The user can close the lid without pushing hard enough to
+  engage the latch — these are physically distinct events
+- The lock module needs to distinguish them to provide accurate
+  feedback: "close the lid harder" is different from "you forgot
+  to close the lid at all"
+- Detecting lock_is_engaged confirms the mechanism worked — if
+  the motor releases and the lock is still engaged the system
+  can alert the user to a hardware problem
+
+**Implementation:** Two separate sensors behind the HAL —
+likely a simple reed switch or mechanical microswitch for the
+lid, and a limit switch on the latch mechanism itself for
+engagement detection.
+
+**Rejected alternative:** A single "closed and locked" signal.
+Rejected because it merges two physical events and prevents the
+system from giving precise feedback about partial closure.
+
+---
+
+## ADR-019: Release behaviour policy lives in the schedule module
+
+**Decision:** The schedule module owns the mapping from
+ScheduleMode to ReleaseBehaviour via schedule_release_behaviour().
+The lock module queries this on every tick rather than
+hardcoding mode-specific behaviour internally.
+
+**Reason:**
+
+- Keeps all mode-based policy in one place — schedule.c already
+  owns schedule_ipad_hold_ms() for the same reason
+- A new mode added to the enum requires updating exactly one
+  file to define its behaviour
+- The lock module becomes mechanism, not policy — it knows how
+  to engage and release but not why
+
+**Consequence:** The lock module depends on schedule.h. This is
+a clean one-way dependency with no risk of circular import since
+schedule.h does not reference lock types.
+
+---
+
+## ADR-020: Nag audio for closed lid without remote
+
+**Decision:** If the lid is closed during a restricted mode
+(not FREE or PERMITTED) while the remote is absent, the system
+plays escalating nag audio until the lid is reopened. This is
+distinct from the VIOLATION audio because the user has not yet
+physically removed the remote — they are attempting to fake
+compliance with an empty box.
+
+**Reason:**
+
+- Without this, the user could close the empty box to mislead
+  the system into thinking enforcement is active while the
+  remote stays on the couch
+- The nag reinforces the physical contract: the box must
+  contain the remote when closed during restriction
+
+**Behavioural distinction:** Nag audio is "close this correctly,"
+violation audio is "you broke the contract." The device should
+treat these as different experiences with different sounds —
+nag is corrective, violation is consequential.
+
+---
+
+## ADR-021: Lock state machine has intrinsic time awareness
+
+**Decision:** Unlike schedule_resolve which is stateless and
+pure, the lock state machine is explicitly stateful and
+time-aware. It records timestamps for:
+
+    - boot_time_unix         (for BOOT grace expiry)
+    - violation_started_unix (for audio escalation)
+    - cooldown_entered_unix  (for hand-off timing)
+
+These are read from hal->time_now_unix() on the relevant
+transition tick and stored in internal module state.
+
+**Reason:**
+
+- Several behaviours (grace period, audio escalation, cooldown
+  timing) are fundamentally time-driven
+- Passing these timestamps through function signatures on every
+  tick would be noisy and error-prone
+- The state machine's job is to track exactly this kind of state
+
+**Testability:** hal_mock_set_time() allows tests to advance the
+clock deterministically between ticks. Tests set a known
+initial time, call lock_tick, advance the mock clock, call
+lock_tick again, and assert the resulting state.
+
+---
+
+## ADR-022: BOOT state does not consult schedule or presence
+
+**Decision:** During LOCK_STATE_BOOT, lock_tick() ignores the
+passed ScheduleWindow and remote_present arguments entirely.
+It only checks whether the grace period has elapsed.
+
+**Reason:**
+
+- During BOOT the schedule and presence data may be stale,
+  missing, or not yet initialised from NVS
+- Acting on that data could produce incorrect transitions
+- Explicitly ignoring the inputs documents that BOOT is a pure
+  time-based state, independent of the rest of the system
+
+**Consequence:** A test can pass any arbitrary ScheduleWindow
+and presence value during BOOT and assert the state remains
+BOOT until the grace period expires. This makes BOOT tests
+simpler, not more complex.
