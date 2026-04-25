@@ -95,7 +95,7 @@ A pure helper function returns the required button hold duration in milliseconds
 
 ## REQ-SCHED-005
 
-**Status:** RED
+**Status:** GREEN
 
 **Title:** Release button behaviour scales with restriction mode
 

@@ -42,6 +42,13 @@ uint32_t schedule_ipad_hold_ms(ScheduleMode mode) {
 }
 
 ReleaseBehaviour schedule_release_behaviour(ScheduleMode mode) {
-    return RELEASE_DENIED;
+        switch (mode) {
+        case MODE_FREE:        return RELEASE_INSTANT;
+        case MODE_PERMITTED:   return RELEASE_INSTANT;
+        case MODE_RESTRICTED:  return RELEASE_HOLD;
+        case MODE_DEEP_FOCUS:  return RELEASE_HOLD;
+        case MODE_SLEEP:       return RELEASE_DENIED;
+        default:               return RELEASE_DENIED;  // fail safe — unknown mode = no access
+    }
 }
 
