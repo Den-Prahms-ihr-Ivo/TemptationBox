@@ -64,6 +64,7 @@ target_link_libraries(test_presence PRIVATE unity)
 add_executable(test_lock
     test_lock.c
     ../../main/lock/lock.c
+    ../../main/schedule/schedule.c 
     ../../main/hal/hal_mock.c
 )
 target_include_directories(test_lock PRIVATE

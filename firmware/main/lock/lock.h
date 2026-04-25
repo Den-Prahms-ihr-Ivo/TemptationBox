@@ -33,6 +33,45 @@ typedef enum {
 } LockState;
 
 /**
+ * Escalation stages during a VIOLATION state.
+ *
+ * The lock module owns this concept because it owns the timing —
+ * other modules (audio, display, future logging) react to the
+ * current stage rather than computing escalation themselves.
+ *
+ * Stages are monotonically non-decreasing during a single
+ * violation. Returning to ARMED or IDLE resets the stage to NONE.
+ *
+ * REQ-LOCK-008
+ */
+typedef enum {
+    VIOLATION_STAGE_NONE = 0,   // not in violation, or just started
+    VIOLATION_STAGE_SOFT,       // 30+ minutes elapsed since violation began
+    VIOLATION_STAGE_WARN,       // 5 minutes or fewer remain in the window
+    VIOLATION_STAGE_LOUD,       // restriction window has ended
+} ViolationStage;
+
+/**
+ * Time elapsed since violation started before the SOFT stage activates.
+ * Tunable — changing this constant updates all dependent behaviour
+ * across consumer modules without touching their code.
+ *
+ * REQ-LOCK-008
+ */
+#define LOCK_VIOLATION_SOFT_S  (30 * 60)
+
+/**
+ * Time remaining in the restriction window at which the WARN stage
+ * activates. Once the window has fewer than this many seconds left,
+ * the stage escalates from SOFT to WARN.
+ *
+ * REQ-LOCK-008
+ */
+#define LOCK_VIOLATION_WARN_S  (5 * 60)
+
+
+
+/**
  * REQ-LOCK-001
  * Duration of the startup grace period in seconds.
  * During this window the motor holds the lock open and no
@@ -52,7 +91,7 @@ typedef enum {
 void lock_init(const HAL *hal);
 
 /**
- * REQ-LOCK-001 through REQ-LOCK-008
+ * REQ-LOCK-001 through REQ-LOCK-009
  * Advances the lock state machine by one tick. Called from
  * task_logic every 500ms. Reads required inputs directly through
  * the HAL (lid, engagement, release button, time) and drives all
@@ -77,3 +116,20 @@ void lock_tick(ScheduleWindow window, bool remote_present, const HAL *hal);
  * Returns the current lock state.
  */
 LockState lock_get_state(void);
+
+/**
+ * REQ-LOCK-008
+ * Returns the current violation stage based on elapsed time since
+ * the violation began and time remaining in the restriction window.
+ *
+ * Returns VIOLATION_STAGE_NONE when the system is not in
+ * LOCK_STATE_VIOLATION. Used by audio, display, and any future
+ * module that needs to react to escalation.
+ *
+ * @return The current violation stage. Safe to call in any state.
+ *
+ * @note Pure read of internal state — no side effects.
+ *       Stage advancement happens during lock_tick().
+ *
+ */
+ViolationStage lock_get_violation_stage(void);
